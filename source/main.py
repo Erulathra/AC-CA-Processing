@@ -3,7 +3,22 @@ import os
 from rich.console import Console
 from rich.prompt import Prompt
 
-import source.process_audio as r
+import process_audio as r
+
+
+def get_device_index(p):
+    device_index = None
+    for i in range(p.get_device_count()):
+        devinfo = p.get_device_info_by_index(i)
+        for keyword in ["mic", "input"]:
+            if keyword in devinfo["name"].lower():
+                print("Found an input: device %d - %s" % (i, devinfo["name"]))
+                device_index = i
+                return device_index
+    if device_index is None:
+        print("No preferred input found; using default input device.")
+
+    return device_index
 
 
 def cls():
@@ -34,31 +49,27 @@ def main():
                       "\t[dim]\[q - wyjdź][/]", sep="\n")
         user_input = console.input("> ")
         print()
-        match user_input:
-            case '1':
-                output_path = record_audio(output_path)
-            case '2':
-                if output_path != "":
-                    play_audio(output_path)
-                else:
-                    console.input(f"Trzeba najpierw nagrać plik audio. {waiter_txt}")
-            case 'l':
-                debug_enabled = not debug_enabled
-            case 'q':
-                break
-            case _:
-                continue
+        if user_input == '1':
+            output_path = record_audio(output_path)
+        elif user_input == '2':
+            play_audio()
+        elif user_input == 'l':
+            debug_enabled = not debug_enabled
+        elif user_input == 'q':
+            break
+        else:
+            continue
 
 
 def record_audio(file_name):
-    if file_name == "": file_name = "plik"
+    if file_name == "":
+        file_name = "plik"
     file_name = prompt.ask("Podaj nazwę pliku: ", default=file_name)
     audio_setup.chunk = int(prompt.ask("Podaj rozdzielczość: ", default=str(audio_setup.chunk)))
     console.print(f"Podaj format wejściowy:",
                   "(1) Int8",
                   "(2) Int16",
-                  "(3) Int24",
-                  "(4) Int32", sep="\n")
+                  "(3) Int24", sep="\n")
     input_format_chosen = int(prompt.ask("", default=str(audio_setup.input_format)))
     audio_setup.channel_number = int(prompt.ask(
         "Wprowadź liczbę kanałów",
@@ -71,7 +82,7 @@ def record_audio(file_name):
 
 
 def play_audio():
-    file_name = prompt.ask("Podaj nazwę pliku: ", default=file_name)
+    file_name = prompt.ask("Podaj nazwę pliku: ", default="plik.wav")
     audio_setup.chunk = int(console.input(f"Podaj rozdzielczość [{audio_setup.chunk}]: "))
     console.print("Odtwarzanie...")
     r.play_audio(audio_setup, file_name)

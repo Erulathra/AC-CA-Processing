@@ -1,5 +1,4 @@
 import wave
-
 import pyaudio
 
 
@@ -17,13 +16,10 @@ class AudioSetup:
 
 
 def record_audio(audio_setup: AudioSetup, file_name):
-    chosen_input_format = \
-        [pyaudio.paInt8, pyaudio.paInt16, \
-         pyaudio.paInt24, pyaudio.paInt32][audio_setup.input_format - 1]
     p = pyaudio.PyAudio()
 
     stream = p.open(
-        format=chosen_input_format,
+        format=audio_setup.input_format,
         channels=audio_setup.channel_number,
         rate=audio_setup.rate,
         frames_per_buffer=audio_setup.chunk,
@@ -44,12 +40,11 @@ def record_audio(audio_setup: AudioSetup, file_name):
 
 
 def save_wav_file(audio_input, audio_setup: AudioSetup, file_name: str, p: pyaudio.PyAudio):
-    wf = wave.open(file_name + ".wav", 'wb')
-    wf.setnchannels(audio_setup.channel_number)
-    wf.setsampwidth(p.get_sample_size(audio_setup.input_format))
-    wf.setframerate(audio_setup.rate)
-    wf.writeframes(b''.join(audio_input))
-    wf.close()
+    with wave.open(file_name + ".wav", 'wb') as wf:
+        wf.setnchannels(audio_setup.channel_number)
+        wf.setsampwidth(p.get_sample_size(audio_setup.input_format))
+        wf.setframerate(audio_setup.rate)
+        wf.writeframes(b''.join(audio_input))
 
 
 def play_audio(audio_setup: AudioSetup, file_name):
