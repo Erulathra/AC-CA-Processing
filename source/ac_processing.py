@@ -12,16 +12,21 @@ def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int])
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
         client_socket.connect(ip_port)
 
-        with p.open(
+        try:
+            stream = p.open(
                 format=input_format,
                 channels=chanel_number,
                 rate=rate,
                 frames_per_buffer=chunk,
-                input=True) as stream:
+                input=True)
 
             while True:
                 data = stream.read(chunk)
                 client_socket.send(data)
+        finally:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
 
 
 def receive_audio(audio_setup: tuple[int, int, int, int]):
@@ -31,12 +36,17 @@ def receive_audio(audio_setup: tuple[int, int, int, int]):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
         server_socket.bind(("", PORT))
 
-        with p.open(
+        try:
+            stream = p.open(
                 format=input_format,
                 channels=chanel_number,
                 rate=rate,
                 frames_per_buffer=chunk,
-                output=True) as stream:
+                output=True)
             while True:
                 data, addr = server_socket.recv(chunk)
-                stream.write(chunk)
+                stream.write(data)
+        finally:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
