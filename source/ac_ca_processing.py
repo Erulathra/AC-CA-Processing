@@ -2,7 +2,7 @@ import socket
 
 import pyaudio
 
-PORT = 5002
+PORT = 5011
 
 
 def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int]):
@@ -37,6 +37,7 @@ def receive_audio(audio_setup: tuple[int, int, int, int]):
         server_socket.bind(("", PORT))
         server_socket.listen()
         conn, addr = server_socket.accept()
+        print(f"Connected with: {addr}")
 
         try:
             stream = p.open(
@@ -46,7 +47,7 @@ def receive_audio(audio_setup: tuple[int, int, int, int]):
                 frames_per_buffer=chunk,
                 output=True)
             while True:
-                data, addr = conn.recv(chunk)
+                data = conn.recv(1024)
                 stream.write(data)
         finally:
             stream.stop_stream()

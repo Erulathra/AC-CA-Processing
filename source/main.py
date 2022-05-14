@@ -3,9 +3,9 @@ import os
 from rich.console import Console
 from rich.prompt import Prompt
 
-import process_audio as r
+import ac_ca_processing as r
 
-
+#TODO: to trzeba uaktualnić
 def get_device_index(p):
     device_index = None
     for i in range(p.get_device_count()):
