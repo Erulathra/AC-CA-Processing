@@ -2,14 +2,14 @@ import socket
 
 import pyaudio
 
-PORT = 5000
+PORT = 5002
 
 
 def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int]):
     p = pyaudio.PyAudio()
     chunk, input_format, chanel_number, rate = audio_setup
 
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
         client_socket.connect(ip_port)
 
         try:
@@ -22,7 +22,7 @@ def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int])
 
             while True:
                 data = stream.read(chunk)
-                client_socket.send(data)
+                client_socket.sendall(data)
         finally:
             stream.stop_stream()
             stream.close()
@@ -33,8 +33,10 @@ def receive_audio(audio_setup: tuple[int, int, int, int]):
     p = pyaudio.PyAudio()
     chunk, input_format, chanel_number, rate = audio_setup
 
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
         server_socket.bind(("", PORT))
+        server_socket.listen()
+        conn, addr = server_socket.accept()
 
         try:
             stream = p.open(
@@ -44,7 +46,7 @@ def receive_audio(audio_setup: tuple[int, int, int, int]):
                 frames_per_buffer=chunk,
                 output=True)
             while True:
-                data, addr = server_socket.recv(chunk)
+                data, addr = conn.recv(chunk)
                 stream.write(data)
         finally:
             stream.stop_stream()
