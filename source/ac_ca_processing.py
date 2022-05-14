@@ -2,8 +2,6 @@ import socket
 
 import pyaudio
 
-PORT = 5011
-
 
 def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int]):
     p = pyaudio.PyAudio()
@@ -29,12 +27,12 @@ def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int])
             p.terminate()
 
 
-def receive_audio(audio_setup: tuple[int, int, int, int]):
+def receive_audio(audio_setup: tuple[int, int, int, int], port):
     p = pyaudio.PyAudio()
     chunk, input_format, chanel_number, rate = audio_setup
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.bind(("", PORT))
+        server_socket.bind(("", port))
         server_socket.listen()
         conn, addr = server_socket.accept()
         print(f"Connected with: {addr}")
