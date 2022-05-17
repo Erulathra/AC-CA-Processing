@@ -1,92 +1,94 @@
 import os
+import pyaudio
 
-from rich.console import Console
-from rich.prompt import Prompt
-
-import ac_ca_processing as r
-
-#TODO: to trzeba uaktualnić
-def get_device_index(p):
-    device_index = None
-    for i in range(p.get_device_count()):
-        devinfo = p.get_device_info_by_index(i)
-        for keyword in ["mic", "input"]:
-            if keyword in devinfo["name"].lower():
-                print("Found an input: device %d - %s" % (i, devinfo["name"]))
-                device_index = i
-                return device_index
-    if device_index is None:
-        print("No preferred input found; using default input device.")
-
-    return device_index
+import ac_ca_processing as ac
+from rich import print
+from rich.prompt import Prompt as prompt
+import threading
 
 
 def cls():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-
-prompt = Prompt()
-console = Console()
-waiter_txt = "\nWciśnij dowolny klawisz, aby kontynuować... "
-
-audio_setup = r.AudioSetup()
+	os.system('cls' if os.name == 'nt' else 'clear')
 
 
 def main():
-    output_path = ""
-    user_input = ''
-    debug_enabled = False
-    while user_input != 'q':
-        cls()
-        print()
-        if debug_enabled: console.print("[ Debug enabled ]\n")
-        # todo: poprawić to niżej
-        if output_path != "": console.print(f"Nazwa pliku:\n {output_path} \n")
-        console.print("Podaj, czy chcesz:",
-                      "\t(1) Nagrać dźwięk",
-                      "\t(2) Odtworzyć dźwięk",
-                      "\t[dim]\[d - debug][/]",
-                      "\t[dim]\[q - wyjdź][/]", sep="\n")
-        user_input = console.input("> ")
-        print()
-        if user_input == '1':
-            output_path = record_audio(output_path)
-        elif user_input == '2':
-            play_audio()
-        elif user_input == 'l':
-            debug_enabled = not debug_enabled
-        elif user_input == 'q':
-            break
-        else:
-            continue
+	port = 2137
+	ip = "192.168.0.18"
+	audio_setup = (1024, pyaudio.paInt16, 2, 44100)
+	user_choice = ''
+	while user_choice != 'q':
+		cls()
+		print(f"IP:PORT\n\t{ip}:{port}")
+		print(audio_setup_to_string(audio_setup), "\n")
+		print("Wybierz opcję:",
+			  "(0) Tryb Setup (podaj wszystko i połącz)",
+			  "(1) Podaj parametry audio",
+			  "(2) Podaj parametry przesyłu (port i adres hosta)",
+			  "(3) Rozpocznij połączenie", 
+			  "\[q - wyjście]", sep="\n\t")
+		user_choice = input("> ")
+		match user_choice:
+			case '0':
+				audio_setup = get_audio_parameters(audio_setup)
+				ip, port = get_transmission_parameters(ip, port)
+				begin_transmission(port, ip, audio_setup)
+			case '1':
+				audio_setup = get_audio_parameters(audio_setup)
+			case '2':
+				ip, port = get_transmission_parameters(ip, port)
+			case '3':
+				begin_transmission(port, ip, audio_setup)
+			case _:
+				continue
+
+def audio_setup_to_string(audio_setup: tuple[int, int, int, int]):
+	chunk, input_format, channel_number, rate = audio_setup
+	return f"Rozdzielczość: {chunk}\n" +\
+		   f"Format wejściowy: {input_format}\n" +\
+		   f"Liczba kanałów: {channel_number}\n" +\
+		   f"Próbkowanie: {rate}"
+
+def get_audio_parameters(audio_setup: tuple[int, int, int, int]):
+	chunk, input_format, channel_number, rate = audio_setup
+	chunk = int(prompt.ask("Podaj rozdzielczość", default=str(chunk)))
+
+	audio_input_formats = [pyaudio.paInt8, pyaudio.paInt16, pyaudio.paInt24, pyaudio.paInt32]
+	print(f"Podaj format wejściowy:",
+		   "(1) Int8",
+		   "(2) Int16",
+		   "(3) Int24",
+		   "(4) Int32", sep="\n")
+	input_format = int(prompt.ask("", default=str(audio_input_formats.index(input_format)+1)))
+	input_format = audio_input_formats[input_format-1]
+	
+	channel_number = int(prompt.ask(
+		"Wprowadź liczbę kanałów",
+		choices=["1", "2"],
+		default=str(channel_number)))
+
+	rate = int(prompt.ask("Podaj częstotliwość próbkowania", default=str(rate)))
+
+	return (chunk, input_format, channel_number, rate)
 
 
-def record_audio(file_name):
-    if file_name == "":
-        file_name = "plik"
-    file_name = prompt.ask("Podaj nazwę pliku: ", default=file_name)
-    audio_setup.chunk = int(prompt.ask("Podaj rozdzielczość: ", default=str(audio_setup.chunk)))
-    console.print(f"Podaj format wejściowy:",
-                  "(1) Int8",
-                  "(2) Int16",
-                  "(3) Int24", sep="\n")
-    input_format_chosen = int(prompt.ask("", default=str(audio_setup.input_format)))
-    audio_setup.channel_number = int(prompt.ask(
-        "Wprowadź liczbę kanałów",
-        choices=["1", "2"],
-        default="1"))
-    audio_setup.rate = int(prompt.ask("Podaj częstotliwość próbkowania: ", default=str(audio_setup.rate)))
-    console.print("Rozpoczęto nagrywanie")
-    r.record_audio(audio_setup, file_name)
-    return file_name
+def get_transmission_parameters(ip, port):
+	ip   = prompt.ask("Podaj adres ip", default=ip)
+	port = int(prompt.ask("Podaj port", default=str(port)))
+	return (ip, port)
 
 
-def play_audio():
-    file_name = prompt.ask("Podaj nazwę pliku: ", default="plik.wav")
-    audio_setup.chunk = int(console.input(f"Podaj rozdzielczość [{audio_setup.chunk}]: "))
-    console.print("Odtwarzanie...")
-    r.play_audio(audio_setup, file_name)
+def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
+	sender_thread = threading.Thread(target=ac.send_audio, args=(audio_setup, (ip, port)))
+	receiver_thread = threading.Thread(target=ac.receive_audio, args=(audio_setup, port))
+
+	try:
+		print("[ Wciśnij Ctrl+C by przerwać ]")
+		receiver_thread.start()
+		input("Naciśnij enter aby rozpocząć połączenie")
+		sender_thread.start()
+	except KeyboardInterrupt:
+		input("Przerwano połączenie. Naciśnij dowolny klawisz, by kontynuować...")
 
 
 if __name__ == '__main__':
-    main()
+	main()
