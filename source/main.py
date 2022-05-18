@@ -28,19 +28,18 @@ def main():
               "(3) Rozpocznij połączenie",
               "\[q - wyjście]", sep="\n\t")
         user_choice = input("> ")
-        match user_choice:
-            case '0':
-                audio_setup = get_audio_parameters(audio_setup)
-                ip, port = get_transmission_parameters(ip, port)
-                begin_transmission(port, ip, audio_setup)
-            case '1':
-                audio_setup = get_audio_parameters(audio_setup)
-            case '2':
-                ip, port = get_transmission_parameters(ip, port)
-            case '3':
-                begin_transmission(port, ip, audio_setup)
-            case _:
-                continue
+        if user_choice == '0':
+            audio_setup = get_audio_parameters(audio_setup)
+            ip, port = get_transmission_parameters(ip, port)
+            begin_transmission(port, ip, audio_setup)
+        elif user_choice == '1':
+            audio_setup = get_audio_parameters(audio_setup)
+        elif user_choice == '2':
+            ip, port = get_transmission_parameters(ip, port)
+        elif user_choice == '3':
+            begin_transmission(port, ip, audio_setup)
+        else:
+            continue
 
 
 def audio_setup_to_string(audio_setup: tuple[int, int, int, int]):
