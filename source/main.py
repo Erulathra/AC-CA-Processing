@@ -103,7 +103,11 @@ def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
         while True:
             pass
     except KeyboardInterrupt:
-        receiver_thread.terminate()
+        try:
+            receiver_thread.terminate()
+        except AttributeError:
+            pass
+
         try:
             sender_thread.terminate()
         except AttributeError:
