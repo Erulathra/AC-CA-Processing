@@ -90,6 +90,7 @@ def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
         input("Naciśnij enter aby rozpocząć połączenie")
         sender_thread.start()
     except KeyboardInterrupt:
+        ac.stop_call = True
         input("Przerwano połączenie. Naciśnij dowolny klawisz, by kontynuować...")
 
 

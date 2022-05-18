@@ -4,6 +4,8 @@ import pyaudio
 
 
 def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int]):
+    global stop_call
+
     p = pyaudio.PyAudio()
     chunk, input_format, chanel_number, rate = audio_setup
 
@@ -18,7 +20,7 @@ def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int])
                 frames_per_buffer=chunk,
                 input=True)
 
-            while True:
+            while not stop_call:
                 data = stream.read(chunk)
                 client_socket.sendall(data)
         finally:
@@ -28,6 +30,8 @@ def send_audio(audio_setup: tuple[int, int, int, int], ip_port: tuple[str, int])
 
 
 def receive_audio(audio_setup: tuple[int, int, int, int], port):
+    global stop_call
+
     p = pyaudio.PyAudio()
     chunk, input_format, chanel_number, rate = audio_setup
 
@@ -44,8 +48,8 @@ def receive_audio(audio_setup: tuple[int, int, int, int], port):
                 rate=rate,
                 frames_per_buffer=chunk,
                 output=True)
-            while True:
-                data = conn.recv(1024)
+            while not stop_call:
+                data = conn.recv(chunk)
                 stream.write(data)
         finally:
             stream.stop_stream()
