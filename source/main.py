@@ -109,6 +109,9 @@ def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
         except AttributeError:
             pass
 
+    receiver_thread.join()
+    sender_thread.join()
+
     input("Przerwano połączenie. Naciśnij dowolny klawisz, by kontynuować...")
 
 
