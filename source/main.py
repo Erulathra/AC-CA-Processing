@@ -77,7 +77,8 @@ def get_audio_parameters(audio_setup: tuple[int, int, int, int]):
 def get_transmission_parameters(ip, port):
     ip = prompt.ask("Podaj adres ip", default=ip)
     port = int(prompt.ask("Podaj port", default=str(port)))
-    return (ip, port)
+
+    return ip, port
 
 
 def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
