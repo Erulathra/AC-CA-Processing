@@ -1,5 +1,5 @@
 import os
-import threading
+import multiprocessing
 
 import pyaudio
 from rich import print
@@ -14,11 +14,10 @@ def cls():
 
 def main():
     port = 2137
-    ip = "192.168.0.18"
+    ip = "192.168.1.174"
     audio_setup = (1024, pyaudio.paInt16, 2, 44100)
     user_choice = ''
     while user_choice != 'q':
-        ac.stop_call = False
         cls()
         print(f"IP:PORT\n\t{ip}:{port}")
         print(audio_setup_to_string(audio_setup), "\n")
@@ -82,8 +81,10 @@ def get_transmission_parameters(ip, port):
 
 
 def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
-    sender_thread = threading.Thread(target=ac.send_audio, args=(audio_setup, (ip, port)))
-    receiver_thread = threading.Thread(target=ac.receive_audio, args=(audio_setup, port))
+    sender_thread = multiprocessing.Process(target=ac.send_audio, args=(audio_setup, (ip, port)))
+    sender_thread.daemon = True
+    receiver_thread = multiprocessing.Process(target=ac.receive_audio, args=(audio_setup, port))
+    receiver_thread.daemon = True
 
     try:
         print("[ Wciśnij Ctrl+C by przerwać ]")
@@ -91,7 +92,12 @@ def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
         input("Naciśnij enter aby rozpocząć połączenie")
         sender_thread.start()
     except KeyboardInterrupt:
-        ac.stop_call = True
+        receiver_thread.terminate()
+        try:
+            sender_thread.terminate()
+        except AttributeError:
+            pass
+
         input("Przerwano połączenie. Naciśnij dowolny klawisz, by kontynuować...")
 
 
