@@ -90,6 +90,7 @@ def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
         print("[ Wciśnij Ctrl+C by przerwać ]")
         receiver_thread.start()
         input("Naciśnij enter aby rozpocząć połączenie")
+        print("Rozpoczynam połączenie")
         sender_thread.start()
     except KeyboardInterrupt:
         receiver_thread.terminate()
