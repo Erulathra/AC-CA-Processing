@@ -18,6 +18,7 @@ def main():
     audio_setup = (1024, pyaudio.paInt16, 2, 44100)
     user_choice = ''
     while user_choice != 'q':
+        ac.stop_call = False
         cls()
         print(f"IP:PORT\n\t{ip}:{port}")
         print(audio_setup_to_string(audio_setup), "\n")
@@ -90,6 +91,7 @@ def begin_transmission(port, ip, audio_setup: tuple[int, int, int, int]):
         input("Naciśnij enter aby rozpocząć połączenie")
         sender_thread.start()
     except KeyboardInterrupt:
+        ac.stop_call = True
         input("Przerwano połączenie. Naciśnij dowolny klawisz, by kontynuować...")
 
 
